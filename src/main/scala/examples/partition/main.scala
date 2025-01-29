@@ -56,24 +56,27 @@ final case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
 
   import SpatialIncarnation.*
 
-
   private object MainProgram extends AggregateProgram with StandardSensors:
     def main(): MainResult =
       import Builtins.Bounded.*
-
-      rep((Double.PositiveInfinity, -1)) { case (currentDist, currentSource) =>
-        mux(sense("source1").asInstanceOf[Boolean] || sense("source2")) {
-          (0.0, mid())
-        } {
-          minHood {
-            val (nbrDist, nbrSrc) = nbr((currentDist, currentSource))
-            ( nbrDist + nbrRange  , nbrSrc)
-
-          }(using Builtins.Bounded.tupleBounded)
+      import Builtins.Bounded
+      def partition(isSource: Boolean, ordering: Bounded[(Double, ID)]) =
+        rep((Double.PositiveInfinity, -1)) {
+          case (currentDist, currentSource) =>
+            mux(isSource) {
+              (0.0, mid())
+            } {
+              minHoodPlus {
+                val (nbrDist, nbrSrc) = nbr((currentDist, currentSource))
+                (nbrDist + nbrRange, nbrSrc)
+              }(using ordering)
+            }
         }
-      }
-
-
+      def senseToBoolean(b: Boolean) = mux(b) { true } { false }
+      partition(
+        senseToBoolean(sense("source1")) || senseToBoolean(sense("source2")),
+        tupleBounded
+      )
 
   private val net = SpaceAwareSimulator(
     space = Basic3DSpace(
@@ -93,10 +96,10 @@ final case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
   )
 
   net.addSensor("source1", false)
-  net.chgSensorValue("source1", Set(50), true)
+  net.chgSensorValue("source1", Set(100), true)
 
   net.addSensor("source2", false)
-  net.chgSensorValue("source2", Set(0), true)
+  net.chgSensorValue("source2", Set(1), true)
 
   @JSExport
   override def executeIterations(): Unit =
