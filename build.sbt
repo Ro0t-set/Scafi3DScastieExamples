@@ -1,6 +1,16 @@
+
 ThisBuild / version := "0.1.0-SNAPSHOT"
 
 scalaVersion := "3.3.4"
+scalafmtOnCompile := true
+
+enablePlugins(ScalafixPlugin)
+ThisBuild / semanticdbEnabled          := true
+ThisBuild / semanticdbVersion          := scalafixSemanticdb.revision
+ThisBuild / scalacOptions  ++= List("-Wunused:all")
+ThisBuild / scalafixOnCompile := true
+ThisBuild / scalafixDependencies += "com.github.xuwei-k" %% "scalafix-rules" % "0.5.1"
+
 
 enablePlugins(ScalaJSPlugin)
 

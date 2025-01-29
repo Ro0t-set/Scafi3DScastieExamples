@@ -1,14 +1,16 @@
-package nbr
+package examples.nbr
 
 import it.unibo.scafi.config.Grid3DSettings
 import it.unibo.scafi.incarnations.BasicAbstractSpatialSimulationIncarnation
-import it.unibo.scafi.space.{Point3D, SpaceHelper}
+import it.unibo.scafi.space.Point3D
+import it.unibo.scafi.space.SpaceHelper
+
 import scala.scalajs.js
 import scala.scalajs.js.Dynamic.literal
-import scala.scalajs.js.annotation.*
+import scala.scalajs.js.annotation._
 import scala.util.Random
 
-type Id = Int
+type Id    = Int
 type Color = Int
 type Label = String
 
@@ -22,13 +24,13 @@ trait EngineApi:
 
 @JSExportTopLevel("EngineImpl")
 case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
-  stepx: Int,
-  stepy: Int,
-  stepz: Int
+    stepx: Int,
+    stepy: Int,
+    stepz: Int
 )(proximityThreshold: Int) extends EngineApi:
 
   private object BasicSpatialIncarnation
-    extends BasicAbstractSpatialSimulationIncarnation:
+      extends BasicAbstractSpatialSimulationIncarnation:
     override type P = Point3D
     private trait MyDistanceStrategy extends DistanceStrategy
     override def buildNewSpace[E](elems: Iterable[(E, P)]): SPACE[E] =
@@ -37,14 +39,13 @@ case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
   private val positions: List[Point3D] = SpaceHelper.grid3DLocations(
     Grid3DSettings(nrows, ncols, ndepth, stepx, stepy, stepz, tolerance = 0)
   )
-  private val ids: IndexedSeq[Int] = 1 to ncols * nrows * ndepth
+  private val ids: IndexedSeq[Int]         = 1 to ncols * nrows * ndepth
   private val devsToPos: Map[Int, Point3D] = ids.zip(positions).toMap
 
   import BasicSpatialIncarnation.*
 
   private object Spatial extends AggregateProgram with StandardSensors:
-    def main()  = foldhoodPlus(0)((a,b) => a + b)(nbr(1))
-
+    def main(): MainResult = foldhoodPlus(0)((a, b) => a + b)(nbr(1))
 
   private val net = new SpaceAwareSimulator(
     space =
@@ -73,7 +74,7 @@ case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
           z = devInfo.pos.z
         ),
         label = net.getExport(id).fold(".")(e => s"${e.root()}"),
-        color = 0xFF0000
+        color = 0xff0000
       )
     }.toArray
 

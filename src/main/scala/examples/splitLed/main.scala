@@ -1,14 +1,16 @@
-package splitLed
+package examples.splitLed
 
 import it.unibo.scafi.config.Grid3DSettings
 import it.unibo.scafi.incarnations.BasicAbstractSpatialSimulationIncarnation
-import it.unibo.scafi.space.{Point3D, SpaceHelper}
+import it.unibo.scafi.space.Point3D
+import it.unibo.scafi.space.SpaceHelper
+
 import scala.scalajs.js
 import scala.scalajs.js.Dynamic.literal
-import scala.scalajs.js.annotation.*
+import scala.scalajs.js.annotation._
 import scala.util.Random
 
-type Id = Int
+type Id    = Int
 type Color = Int
 type Label = String
 
@@ -22,19 +24,19 @@ trait EngineApi:
 
 @JSExportTopLevel("EngineImpl")
 case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
-  stepx: Int,
-  stepy: Int,
-  stepz: Int
+    stepx: Int,
+    stepy: Int,
+    stepz: Int
 )(proximityThreshold: Int) extends EngineApi:
   private val positions: List[Point3D] = SpaceHelper.grid3DLocations(
     Grid3DSettings(nrows, ncols, ndepth, stepx, stepy, stepz, tolerance = 0)
   )
-  private val ids: IndexedSeq[Int] = 1 to ncols * nrows * ndepth
+  private val ids: IndexedSeq[Int]         = 1 to ncols * nrows * ndepth
   private val devsToPos: Map[Int, Point3D] = ids.zip(positions).toMap
-  private var colors: Map[Id, Color] = ids.map(_ -> 0xFF0000).toMap
+  private var colors: Map[Id, Color]       = ids.map(_ -> 0xff0000).toMap
 
   private object BasicSpatialIncarnation
-    extends BasicAbstractSpatialSimulationIncarnation:
+      extends BasicAbstractSpatialSimulationIncarnation:
     override type P = Point3D
     private trait MyDistanceStrategy extends DistanceStrategy
     override def buildNewSpace[E](elems: Iterable[(E, P)]): SPACE[E] =
@@ -43,17 +45,18 @@ case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
   import BasicSpatialIncarnation.*
 
   private object Spatial extends AggregateProgram with StandardSensors:
-    def main() =
+    def main(): MainResult =
       val newColors = mux(mid() < 50) {
         colors + (mid() -> 0xbfff00)
       } {
-        colors + (mid() -> 0xFF00FF)
+        colors + (mid() -> 0xff00ff)
       }
       colors = newColors
-      mux(mid() < 50) {"g"}{"p"}
+      mux(mid() < 50) { "g" } { "p" }
 
   private val net = new SpaceAwareSimulator(
-    space = new Basic3DSpace(devsToPos, proximityThreshold = proximityThreshold),
+    space =
+      new Basic3DSpace(devsToPos, proximityThreshold = proximityThreshold),
     devs = devsToPos.map { case (d, p) =>
       d -> new DevInfo(d, p, lsns = Map.empty, nsns => nbr => null)
     },
@@ -77,7 +80,7 @@ case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
           z = devInfo.pos.z
         ),
         label = net.getExport(id).fold(".")(e => s"${e.root()}"),
-        color = colors.getOrElse(id, 0xFF0000)
+        color = colors.getOrElse(id, 0xff0000)
       )
     }.toArray
     js.Array(nodes: _*)
