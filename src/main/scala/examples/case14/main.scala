@@ -1,4 +1,4 @@
-package examples.case12
+package examples.case14
 
 import it.unibo.scafi.config.Grid3DSettings
 import it.unibo.scafi.incarnations.BasicAbstractSpatialSimulationIncarnation
@@ -57,7 +57,7 @@ final case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
   import SpatialIncarnation.*
 
   private object MainProgram extends AggregateProgram with StandardSensors:
-    def main(): Set[ID] = foldhood(Set.empty[ID])(_ ++ _)(nbr { Set(mid()) })
+    def main(): MainResult = rep(mid()) { x => x max maxHoodPlus(nbr { x }) }
 
   private val net = SpaceAwareSimulator(
     space = Basic3DSpace(

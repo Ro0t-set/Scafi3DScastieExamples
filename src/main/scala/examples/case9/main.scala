@@ -1,4 +1,4 @@
-package examples.gradient
+package examples.case9
 
 import it.unibo.scafi.config.Grid3DSettings
 import it.unibo.scafi.incarnations.BasicAbstractSpatialSimulationIncarnation
@@ -25,9 +25,9 @@ trait EngineApi:
 
 @JSExportTopLevel("EngineImpl")
 final case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
-  stepx: Int,
-  stepy: Int,
-  stepz: Int
+    stepx: Int,
+    stepy: Int,
+    stepz: Int
 )(proximityThreshold: Int) extends EngineApi:
   import EngineImpl.*
 
@@ -47,7 +47,7 @@ final case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
   private var colors: Map[Id, Color]       = ids.map(_ -> DefaultColor).toMap
 
   private object SpatialIncarnation
-    extends BasicAbstractSpatialSimulationIncarnation:
+      extends BasicAbstractSpatialSimulationIncarnation:
     override type P = Point3D
     private trait CustomDistanceStrategy extends DistanceStrategy
 
@@ -56,15 +56,11 @@ final case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
 
   import SpatialIncarnation.*
 
-  private object GradientProgram extends AggregateProgram with StandardSensors:
-    def main() =
-       branch[Int](sense[Boolean]("sensor")){rep(0){a => branch(a<1000)(a+1)(a)}}{0}
-
-    private def calculateColor(gradient: Double): Int =
-      val maxDistance = 1000
-      val hue         = (gradient / maxDistance * 360).toInt
-      val lightness   = 50 + (gradient / maxDistance * 20).toInt
-      hslToRgb(hue, s = 40, lightness)
+  private object MainProgram extends AggregateProgram with StandardSensors:
+    def main(): MainResult =
+      branch[Int](sense[Boolean]("sensor")) {
+        rep(0) { a => branch(a < 1000)(a + 1)(a) }
+      } { 0 }
 
   private val net = SpaceAwareSimulator(
     space = Basic3DSpace(
@@ -89,7 +85,7 @@ final case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
   @JSExport
   override def executeIterations(): Unit =
     val randomId = ids(Random.nextInt(ids.size))
-    net.exec(GradientProgram, GradientProgram.main(), randomId)
+    net.exec(MainProgram, MainProgram.main(), randomId)
 
   @JSExport
   override def getNodes(): js.Array[js.Dynamic] =

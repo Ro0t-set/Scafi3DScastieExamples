@@ -54,15 +54,15 @@ case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
 
   private object Spatial extends AggregateProgram with StandardSensors:
     def main(): MainResult =
-      val center          = Point3D(450, 450, 300)
-      val radius          = 300.0
-      val id              = mid()
-      val phi             = Math.acos(1 - 2 * (id.toDouble / net.ids.size))
-      val time            = rep(0.0)(_ + 0.01)
-      val theta           = Math.PI * (1 + Math.sqrt(5)) * id + time
-      val targetX         = center.x + radius * Math.sin(phi) * Math.cos(theta)
-      val targetY         = center.y + radius * Math.sin(phi) * Math.sin(theta)
-      val targetZ         = center.z + radius * Math.cos(phi)
+      val center  = Point3D(450, 450, 300)
+      val radius  = 300.0
+      val id      = mid()
+      val phi     = Math.acos(1 - 2 * (id.toDouble / net.ids.size))
+      val time    = rep(0.0)(_ + 0.01)
+      val theta   = Math.PI * (1 + Math.sqrt(5)) * id + time
+      val targetX = center.x + radius * Math.sin(phi) * Math.cos(theta)
+      val targetY = center.y + radius * Math.sin(phi) * Math.sin(theta)
+      val targetZ = center.z + radius * Math.cos(phi)
       Point3D(targetX, targetY, targetZ)
       val currentPosition = net.devs(mid()).pos
       val speed           = 0.1
