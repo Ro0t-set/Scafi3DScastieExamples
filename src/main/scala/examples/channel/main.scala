@@ -25,9 +25,9 @@ trait EngineApi:
 
 @JSExportTopLevel("EngineImpl")
 final case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
-  stepx: Int,
-  stepy: Int,
-  stepz: Int
+    stepx: Int,
+    stepy: Int,
+    stepz: Int
 )(proximityThreshold: Int) extends EngineApi:
   import EngineImpl.*
 
@@ -47,7 +47,7 @@ final case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
   private var colors: Map[Id, Color]       = ids.map(_ -> DefaultColor).toMap
 
   private object SpatialIncarnation
-    extends BasicAbstractSpatialSimulationIncarnation:
+      extends BasicAbstractSpatialSimulationIncarnation:
     override type P = Point3D
     private trait CustomDistanceStrategy extends DistanceStrategy
 
@@ -57,7 +57,7 @@ final case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
   import SpatialIncarnation.*
 
   private object GradientProgram extends AggregateProgram with StandardSensors:
-    def main() =
+    def main(): MainResult =
       def broadcast[A](source: Boolean, input: A): A =
         rep(Double.PositiveInfinity) { distance =>
           mux(source)(0.0) {
@@ -77,25 +77,20 @@ final case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
 
       def distance(source: Boolean, destination: Boolean): Double =
         val toSource = broadcast(source, gradient(source))
-        val toDest = broadcast(destination, gradient(destination))
+        val toDest   = broadcast(destination, gradient(destination))
         toSource + toDest
 
-
-      val source = sense[Boolean]("source")
+      val source      = sense[Boolean]("source")
       val destination = sense[Boolean]("target")
-      val dist = distance(source, destination)
+      val dist        = distance(source, destination)
       colors += mid() -> calculateColor(dist)
       dist
 
-
-
     private def calculateColor(gradient: Double): Int =
-      val maxDist = 2700
-      val hue = (gradient / maxDist * 360).toInt
+      val maxDist   = 2700
+      val hue       = (gradient / maxDist * 360).toInt
       val lightness = 50 + (gradient / maxDist * 20)
       hslToRgb(hue, 70, lightness.toInt)
-
-
 
   private val net = SpaceAwareSimulator(
     space = Basic3DSpace(

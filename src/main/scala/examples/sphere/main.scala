@@ -22,8 +22,6 @@ final case class Position(x: Double, y: Double, z: Double)
 
 final case class Node(id: Id, position: Position, label: Label, color: Color)
 
-
-
 trait EngineApi:
   def executeIterations(): Unit
   def getNodes(): js.Array[js.Dynamic]
@@ -31,9 +29,9 @@ trait EngineApi:
 
 @JSExportTopLevel("EngineImpl")
 case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
-  stepx: Int,
-  stepy: Int,
-  stepz: Int
+    stepx: Int,
+    stepy: Int,
+    stepz: Int
 )(proximityThreshold: Int) extends EngineApi:
   private val positions: List[Point3D] = SpaceHelper.grid3DLocations(
     Grid3DSettings(nrows, ncols, ndepth, stepx, stepy, stepz, tolerance = 0)
@@ -41,12 +39,12 @@ case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
   private val ids: IndexedSeq[Int]         = 1 to ncols * nrows * ndepth
   private val devsToPos: Map[Int, Point3D] = ids.zip(positions).toMap
   private var colors: Map[Id, Color]       = ids.map(_ -> 0xff0000).toMap
-  private var devTimers: Map[Id, Double]       = ids.map(_ -> 0.0).toMap
-  private val center = Point3D(450, 450, 300)
-  private val radius = 300.0
+  private var devTimers: Map[Id, Double]   = ids.map(_ -> 0.0).toMap
+  private val center                       = Point3D(450, 450, 300)
+  private val radius                       = 300.0
 
   private object BasicSpatialIncarnation
-    extends BasicAbstractSpatialSimulationIncarnation:
+      extends BasicAbstractSpatialSimulationIncarnation:
     override type P = Point3D
 
     private trait MyDistanceStrategy extends DistanceStrategy
@@ -76,7 +74,7 @@ case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
     space =
       new Basic3DSpace(devsToPos, proximityThreshold = proximityThreshold),
     devs = devsToPos.map { case (d, p) =>
-      d ->  new DevInfo(d, p, lsns = Map.empty, nsns => nbr => null)
+      d -> new DevInfo(d, p, lsns = Map.empty, nsns => nbr => null)
     },
     simulationSeed = System.currentTimeMillis(),
     randomSensorSeed = System.currentTimeMillis()
@@ -85,21 +83,20 @@ case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
   net.addSensor(name = "sensor", value = false)
   net.chgSensorValue(name = "sensor", ids = Set(1), value = true)
 
-
   @JSExport
   override def executeIterations(): Unit =
     val nextIdToRun = ids(Random.nextInt(ids.size))
-    val id = nextIdToRun
-    val phi = Math.acos(1 - 2 * (id.toDouble / net.ids.size))
-    val time = devTimers(nextIdToRun)
+    val id          = nextIdToRun
+    val phi         = Math.acos(1 - 2 * (id.toDouble / net.ids.size))
+    val time        = devTimers(nextIdToRun)
     devTimers = devTimers + (nextIdToRun -> (time + 0.01))
-    val theta = Math.PI * (1 + Math.sqrt(5)) * id + time
+    val theta   = Math.PI * (1 + Math.sqrt(5)) * id + time
     val targetX = center.x + radius * Math.sin(phi) * Math.cos(theta)
     val targetY = center.y + radius * Math.sin(phi) * Math.sin(theta)
     val targetZ = center.z + radius * Math.cos(phi)
     Point3D(targetX, targetY, targetZ)
     val currentPosition = net.devs(nextIdToRun).pos
-    val speed = 0.1
+    val speed           = 0.1
     val newX = currentPosition.x + (targetX - currentPosition.x) * speed
     val newY = currentPosition.y + (targetY - currentPosition.y) * speed
     val newZ = currentPosition.z + (targetZ - currentPosition.z) * speed
