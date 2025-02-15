@@ -25,9 +25,9 @@ trait EngineApi:
 
 @JSExportTopLevel("EngineImpl")
 final case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
-    stepx: Int,
-    stepy: Int,
-    stepz: Int
+  stepx: Int,
+  stepy: Int,
+  stepz: Int
 )(proximityThreshold: Int) extends EngineApi:
   import EngineImpl.*
 
@@ -47,7 +47,7 @@ final case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
   private var colors: Map[Id, Color]       = ids.map(_ -> DefaultColor).toMap
 
   private object SpatialIncarnation
-      extends BasicAbstractSpatialSimulationIncarnation:
+    extends BasicAbstractSpatialSimulationIncarnation:
     override type P = Point3D
     private trait CustomDistanceStrategy extends DistanceStrategy
 
@@ -56,35 +56,44 @@ final case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
 
   import SpatialIncarnation.*
 
-  private object GradientProgram extends AggregateProgram with StandardSensors:
+  private object ChannelProgram extends AggregateProgram with StandardSensors:
     def main(): MainResult =
-      def broadcast[A](source: Boolean, input: A): A =
+      import Builtins.Bounded.*
+      import Builtins.Bounded
+      
+      def gradient(sensor: Boolean): Double =
         rep(Double.PositiveInfinity) { distance =>
-          mux(source)(0.0) {
+          mux(sensor)(0.0) {
             minHoodPlus(nbr(distance) + nbrRange)
           }
         }
-        input
+        
+      def broadcast[F](isSource: Boolean, field: F, ordering: Bounded[(Double, F)]): F =
+        rep((Double.PositiveInfinity, field)) {
+          case (currentDist, currentValue) => 
+            mux(isSource) {
+              (0.0, field)
+            } {
+              minHoodPlus {
+                val (nbrDist, nbrValue) = nbr((currentDist, currentValue))
+                (nbrDist + nbrRange, nbrValue)
+              }(using ordering)
+            }
+        }._2
 
-      def gradient(source: Boolean): Double =
-        rep(Double.PositiveInfinity) { dist =>
-          mux(source) {
-            0.0
-          } {
-            minHoodPlus(nbr(dist) + nbrRange)
-          }
-        }
-
-      def distance(source: Boolean, destination: Boolean): Double =
-        val toSource = broadcast(source, gradient(source))
-        val toDest   = broadcast(destination, gradient(destination))
-        toSource + toDest
+      def distance(source: Boolean, target: Boolean): Double =
+        broadcast(source, gradient(target), tupleBounded)
 
       val source      = sense[Boolean]("source")
       val destination = sense[Boolean]("target")
-      val dist        = distance(source, destination)
-      colors += mid() -> calculateColor(dist)
-      dist
+
+      def channel(src: Boolean, dest: Boolean) =
+        gradient(src) + gradient(dest) <= distance(src, dest)
+
+      if channel(source, destination) then
+        colors += mid() -> 0XFFFF
+      else colors += mid() -> 0XFF0000
+      ""
 
     private def calculateColor(gradient: Double): Int =
       val maxDist   = 2700
@@ -118,7 +127,7 @@ final case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
   @JSExport
   override def executeIterations(): Unit =
     val randomId = ids(Random.nextInt(ids.size))
-    net.exec(GradientProgram, GradientProgram.main(), randomId)
+    net.exec(ChannelProgram, ChannelProgram.main(), randomId)
 
   @JSExport
   override def getNodes(): js.Array[js.Dynamic] =
