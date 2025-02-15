@@ -1,5 +1,6 @@
 package examples.partition
 
+
 import it.unibo.scafi.config.Grid3DSettings
 import it.unibo.scafi.incarnations.BasicAbstractSpatialSimulationIncarnation
 import it.unibo.scafi.space.Point3D
@@ -25,9 +26,9 @@ trait EngineApi:
 
 @JSExportTopLevel("EngineImpl")
 final case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
-    stepx: Int,
-    stepy: Int,
-    stepz: Int
+  stepx: Int,
+  stepy: Int,
+  stepz: Int
 )(proximityThreshold: Int) extends EngineApi:
   import EngineImpl.*
 
@@ -47,7 +48,7 @@ final case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
   private var colors: Map[Id, Color]       = ids.map(_ -> DefaultColor).toMap
 
   private object SpatialIncarnation
-      extends BasicAbstractSpatialSimulationIncarnation:
+    extends BasicAbstractSpatialSimulationIncarnation:
     override type P = Point3D
     private trait CustomDistanceStrategy extends DistanceStrategy
 
@@ -74,11 +75,13 @@ final case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
         }
       def senseToBoolean(b: Boolean) = mux(b) { true } { false }
       val tuple : (Double, Int) =partition(
-        senseToBoolean(sense("source1")) || senseToBoolean(sense("source2")),
+        senseToBoolean(sense("source1"))   ||
+          senseToBoolean(sense("source2"))   ||
+          senseToBoolean(sense("source3")),
         tupleBounded
       )
-      colors += mid() -> hslToRgb((tuple._2 * 60), 100, 50)
-      tuple
+      colors += mid() -> hslToRgb(tuple._2*3, 100, 50)
+      ""
 
   private val net = SpaceAwareSimulator(
     space = Basic3DSpace(
@@ -102,6 +105,9 @@ final case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
 
   net.addSensor("source2", false)
   net.chgSensorValue("source2", Set(1), true)
+
+  net.addSensor("source3", false)
+  net.chgSensorValue("source3", Set(55), true)
 
   @JSExport
   override def executeIterations(): Unit =
