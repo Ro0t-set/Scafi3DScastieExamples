@@ -56,7 +56,7 @@ final case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
 
   import SpatialIncarnation.*
 
-  private object MainProgram extends AggregateProgram with StandardSensors:
+  private object Partition extends AggregateProgram with StandardSensors:
     def main(): MainResult =
       import Builtins.Bounded.*
       import Builtins.Bounded
@@ -73,10 +73,12 @@ final case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
             }
         }
       def senseToBoolean(b: Boolean) = mux(b) { true } { false }
-      partition(
+      val tuple : (Double, Int) =partition(
         senseToBoolean(sense("source1")) || senseToBoolean(sense("source2")),
         tupleBounded
       )
+      colors += mid() -> hslToRgb((tuple._2 * 60), 100, 50)
+      tuple
 
   private val net = SpaceAwareSimulator(
     space = Basic3DSpace(
@@ -104,7 +106,7 @@ final case class EngineImpl(ncols: Int, nrows: Int, ndepth: Int)(
   @JSExport
   override def executeIterations(): Unit =
     val randomId = ids(Random.nextInt(ids.size))
-    net.exec(MainProgram, MainProgram.main(), randomId)
+    net.exec(Partition, Partition.main(), randomId)
 
   @JSExport
   override def getNodes(): js.Array[js.Dynamic] =
